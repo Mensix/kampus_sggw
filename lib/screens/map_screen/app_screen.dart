@@ -7,7 +7,6 @@ import 'package:kampus_sggw/models/map_item.dart';
 import 'package:kampus_sggw/models/map_items.dart';
 import 'package:kampus_sggw/logic/controllers/search_button_controller.dart';
 import 'package:kampus_sggw/screens/map_screen/map_screen.dart';
-import 'package:kampus_sggw/screens/map_screen/search_widgets/search_bar.dart';
 import 'package:kampus_sggw/screens/map_screen/bottom_drawer.dart';
 import 'package:provider/provider.dart';
 
