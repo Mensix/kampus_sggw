@@ -1,0 +1,40 @@
+{
+    "map_screen_title": "Kampus SGGW",
+
+    "drawer_settings": "Ustawienia",
+    "drawer_campus_rules": "Regulamin kampusu",
+
+    "search_bar_title": "Szukaj miejsca lub adresu",
+    "find_nearby": "Szukaj w pobliżu",
+    "recent": "Ostatnio odwiedzone",
+    "recent_searches": "Ostatnio odwiedzone",
+    "food": "Restauracje",
+    "bus": "Transport publiczny",
+    "parking": "Parkingi",
+    "park": "Parki i pomniki",
+    "store": "Sklepy",
+    "copier": "Ksero",
+    "no_results_found": "Nie znaleziono wyników wyszukiwania",
+
+    "other_institutions": "Pozostałe instytucje",
+    "floor_plans": "Mapy pięter",
+    "photo": "Zdjęcie",
+    "gallery": "Galeria",
+    "departments": "Katedry",
+    "institutes": "Instytuty",
+    "faculties": "Wydziały",
+    "floor": "Piętro",
+    "website": "Strona internetowa",
+    "close": "Zamknij",
+    "want_you_exit": "Naciśnij ponownie WSTECZ by wyjść",
+
+    "settings": "Ustawienia",
+    "dark_mode": "Tryb ciemny",
+    "language": "Język",
+    "pl": "Polski",
+    "en": "Angielski",
+    "campus_rules": "Regulamin kampusu",
+    "offices": "Biura",
+    "rules_link": "Pełna wersja regulaminu",
+    "authors": "Autorzy"
+}
