@@ -26,7 +26,7 @@ public class VerificationCodesRepository : IVerificationCodesRepository
     public VerificationCode GetLast(Guid userId)
     {
         var verificationCode = dbContext.VerificationCodes
-            .Where(vc => vc.UserId == userId && vc.ConfirmedForPasswordReset == true)
+            .Where(vc => vc.UserId == userId && vc.ConfirmedForPasswordReset == false)
             .OrderByDescending(vc => vc.ActiveUntil)
             .FirstOrDefault();
 
