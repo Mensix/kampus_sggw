@@ -39,6 +39,7 @@ public class AccountController : ControllerBase
             LastActiveAt = DateTime.UtcNow,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
+            DeviceToken = "",
         };
 
         var result = await userManager.CreateAsync(user, param.Password);

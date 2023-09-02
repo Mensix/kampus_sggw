@@ -79,7 +79,7 @@ public class TokensController : ControllerBase
 
             foreach (var u in users)
             {
-                u.DeviceToken = null;
+                u.DeviceToken = "";
                 await userManager.UpdateAsync(u);
             }
         }
