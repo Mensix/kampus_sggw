@@ -11,6 +11,8 @@ public class DataContext : IdentityDbContext<UserAccount, UserRole, Guid>
     // Tables
     public DbSet<RevokedToken> RevokedTokens { get; set; }
     public DbSet<VerificationCode> VerificationCodes { get; set; }
+    public DbSet<PasswordResetRequest> PasswordResetRequests { get; set; }
+    public DbSet<UserEmailChange> UserEmailChanges { get; set; }
 
     // Constructor
     public DataContext(DbContextOptions<DataContext> options)

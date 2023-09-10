@@ -3,6 +3,7 @@
 using KampusSggwBackend.Infrastructure.UserService;
 using KampusSggwBackend.Data;
 using KampusSggwBackend.Configuration;
+using KampusSggwBackend.Infrastructure.SendGridEmailService;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
@@ -34,7 +35,7 @@ public class Startup
 
         services.AddUsersRepository();
         
-        //services.AddSendGridEmailService(Configuration);
+        services.AddSendGridEmailService(Configuration);
 
         //services.AddFirebase(Configuration);
 

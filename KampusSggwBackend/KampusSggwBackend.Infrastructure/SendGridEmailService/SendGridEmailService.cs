@@ -60,4 +60,12 @@ public class SendGridEmailService : IEmailService
 
         return _emailSender.SendEmailAsync(email, subject, message);
     }
+
+    public Task SendEmailAfterAccountDelete(string email)
+    {
+        var subject = "Usunięcię konta w aplikacji Kampus SGGW";
+        var message = $"Twoje konto zostało pomyślnie usunięte z aplikacji Kampus SGGW";
+
+        return _emailSender.SendEmailAsync(email, subject, message);
+    }
 }

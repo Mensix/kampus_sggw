@@ -3,10 +3,15 @@
 using KampusSggwBackend.Controllers.Account.Parameters;
 using KampusSggwBackend.Domain.Exceptions;
 using KampusSggwBackend.Domain.User;
+using KampusSggwBackend.Infrastructure.SendGridEmailService;
 using KampusSggwBackend.Infrastructure.UserService;
+using KampusSggwBackend.Infrastructure.UserService.Repositories.PasswordResetRequests;
+using KampusSggwBackend.Infrastructure.UserService.Repositories.UserEmailChanges;
+using KampusSggwBackend.Services.RequestingUser;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -14,16 +19,29 @@ public class AccountController : ControllerBase
 {
     // Services
     private readonly UserManager<UserAccount> userManager;
-    // private readonly IEmailService _emailService;
+    private readonly IEmailService emailService;
+    private readonly IRequestingUserService requestingUserService;
     private readonly IVerificationCodeFactoryService verificationCodeFactoryService;
+
+    // Repositories
+    private readonly IPasswordResetRequestsRepository passwordResetRequestsRepository;
+    private readonly IUserEmailChangesRepository userEmailChangesRepository;
 
     // Constructor
     public AccountController(
         UserManager<UserAccount> _userManager,
+        IEmailService emailService,
+        IPasswordResetRequestsRepository passwordResetRequestsRepository,
+        IRequestingUserService requestingUserService,
+        IUserEmailChangesRepository userEmailChangesRepository,
         IVerificationCodeFactoryService verificationCodeFactoryService)
     {
         this.userManager = _userManager;
+        this.emailService = emailService;
         this.verificationCodeFactoryService = verificationCodeFactoryService;
+        this.passwordResetRequestsRepository = passwordResetRequestsRepository;
+        this.requestingUserService = requestingUserService;
+        this.userEmailChangesRepository = userEmailChangesRepository;
     }
 
     // Methods
@@ -51,16 +69,13 @@ public class AccountController : ControllerBase
 
         var verificationCode = await verificationCodeFactoryService.CreateVerificationCode(user.Id);
 
-        //await _emailService.SendEmailConfirmationForNewAccount(
-        //    userAccount.Email, 
-        //    emailVerificationCode.Value, 
-        //    userAccount.Language);
+        await emailService.SendEmailConfirmationForNewAccount(user.Email, verificationCode.Value);
 
         return Ok();
     }
 
     [AllowAnonymous]
-    [HttpPost("test")]
+    [HttpPost("create-test-account")]
     public async Task<ActionResult> CreateTestAccount([FromBody] CreateTestAccountParam param)
     {
         if (param.SuperPassword != "0d2f3476-5c21-4a49-82e4-480f590ed298")
@@ -127,56 +142,137 @@ public class AccountController : ControllerBase
         return Ok();
     }
 
-    //[AllowAnonymous]
-    //[HttpPost("reset-password")]
-    //public Task<ActionResult> ResetPassword([FromBody] ResetPasswordParam param)
+    [AllowAnonymous]
+    [HttpPost("reset-password")]
+    public async Task<ActionResult> ResetPassword([FromBody] ResetPasswordParam param)
+    {
+        var user = userManager.Users.Where(u => u.Email == param.Email).FirstOrDefault();
+
+        if (user == null)
+        {
+            return NotFound("User not found");
+        }
+
+        var passwordResetRequest = passwordResetRequestsRepository.Get(param.VerificationCode);
+
+        if (passwordResetRequest == null)
+        {
+            passwordResetRequestsRepository.LogInvalidPasswordResetRequestForUser(user.Id);
+            return BadRequest("Confirmation code is invalid.");
+        }
+
+        if (passwordResetRequest.InvalidAttempts > 2)
+        {
+            return BadRequest("Confirmation code has expired.");
+        }
+
+        if (passwordResetRequest.ActiveUntil < DateTimeOffset.UtcNow)
+        {
+            return BadRequest("Confirmation code has expired.");
+        }
+
+        var token = await userManager.GeneratePasswordResetTokenAsync(user);
+        var result = await userManager.ResetPasswordAsync(user, token, param.NewPassword);
+
+        if (!result.Succeeded)
+        {
+            var error = result.Errors.First();
+            return BadRequest($"ResetPasswordError: Code {error.Code}, Description: {error.Description}");
+        }
+
+        passwordResetRequestsRepository.DeleteForUser(user.Id);
+
+        return Ok();
+    }
+
+    [HttpPost("change-password")]
+    public async Task<ActionResult> ChangePassword([FromQuery] ChangePasswordParam param)
+    {
+        var requestingUser = await requestingUserService.GetRequestingUser();
+        var user = await userManager.FindByIdAsync(requestingUser.Id.ToString());
+
+        var result = await userManager.ChangePasswordAsync(user, param.CurrentPassword, param.NewPassword);
+
+        if (!result.Succeeded)
+        {
+            var error = result.Errors.First();
+            return BadRequest($"ResetPasswordError: Code {error.Code}, Description: {error.Description}");
+        }
+
+        return Ok();
+    }
+
+    //[HttpPost("change-email")]
+    //public async Task<ActionResult> ChangeEmail([FromQuery] ChangeEmailParam param)
     //{
-    //    var user =  await userManager.Users
-    //                    .Where(u => u.Email == param.Email)
-    //                    .Include(u => u.PasswordResetRequests)
-    //                    .FirstOrDefaultAsync(ct);
+    //    var requestingUser = await requestingUserService.GetRequestingUser();
+    //    var user = await userManager.FindByIdAsync(requestingUser.Id.ToString());
 
-    //    if (user == null)
+    //    var isEmailTaken = await userManager.Users
+    //        .Where(u => u.Email == param.NewUserEmail)
+    //        .AnyAsync();
+
+    //    if (isEmailTaken)
     //    {
-    //        return NotFound("User not found");
+    //        return BadRequest("The email is already in use.");
     //    }
 
-    //    var passwordResetRequest = user.PasswordResetRequests
-    //        .FirstOrDefault(r => r.Value == command.VerificationCode);
+    //    var emailChange = userEmailChangesRepository.Get(user.Id);
 
-    //    if (passwordResetRequest == null)
+    //    if (emailChange == null)
     //    {
-    //        await LogInvalidPasswordResetRequestAttempt(userAccount.PasswordResetRequests, ct);
-    //        throw ExceptionFactory.Create(new InvalidConfirmationCodeError());
+    //        emailChange = new UserEmailChange() { Id = Guid.NewGuid(), UserId = user.Id };
+    //        userEmailChangesRepository.Create(emailChange);
     //    }
 
-    //    if (passwordResetRequest.InvalidAttempts > 2)
-    //    {
-    //        throw ExceptionFactory.Create(new ExpiredConfirmationCodeError());
-    //        //throw ExceptionFactory.Create(new TooManyResetPasswordWithInvalidCodeAttemptsCodeError());
-    //    }
+    //    emailChange.NewEmail = param.NewUserEmail;
+    //    emailChange.VerificationCode = await userManager.GenerateChangeEmailTokenAsync(user, param.NewUserEmail);
+    //    emailChange.ExpiresAt = DateTimeOffset.UtcNow.AddHours(2);
 
-    //    if (passwordResetRequest.ActiveUntil < DateTimeOffset.UtcNow)
-    //    {
-    //        throw ExceptionFactory.Create(new ExpiredConfirmationCodeError());
-    //    }
+    //    userEmailChangesRepository.Update(emailChange);
 
-    //    var token = await _userManager.GeneratePasswordResetTokenAsync(userAccount);
+    //    var newEmailLink = $"{Request.Scheme}://{Request.Host}/Account/ConfirmEmailChange" +
+    //       $"?userAccountId={emailChange.UserId}" +
+    //       $"&verificationCode={HttpUtility.UrlEncode(emailChange.VerificationCode)}";
 
-    //    var result = await _userManager.ResetPasswordAsync(userAccount, token, command.NewPassword);
+    //    await emailService.SendNewEmailConfirmationMessage(param.NewUserEmail, newEmailLink);
 
-    //    if (!result.Succeeded)
-    //    {
-    //        throw ExceptionFactory.Create(new CustomError
-    //        {
-    //            Code = result.Errors.First().Code,
-    //            Description = result.Errors.First().Description
-    //        });
-    //    }
-
-    //    _db.PasswordResetRequests.RemoveRange(userAccount.PasswordResetRequests);
-    //    await _db.SaveChangesAsync(ct);
-
-    //    return Mediator.Send(command);
+    //    return Ok();
     //}
+
+    [AllowAnonymous]
+    [HttpPost("resend-confirmation-code")]
+    public async Task<ActionResult> ResendConfirmationCode([FromBody] ResendConfirmationCodeParam param)
+    {
+        var user = userManager.Users.FirstOrDefault(u => u.Email == param.Email);
+
+        if (user == null)
+        {
+            return NotFound("User not found.");
+        }
+
+        var verificationCode = await verificationCodeFactoryService.CreateVerificationCode(user.Id);
+
+        await emailService.SendEmailConfirmationForNewAccount(user.Email, verificationCode.Value);
+        return Ok();
+    }
+
+    [HttpDelete("delete-account")]
+    public async Task<ActionResult> DeleteAccount()
+    {
+        var requestingUser = await requestingUserService.GetRequestingUser();
+
+        var user = await userManager.Users
+            .Where(u => u.Id == requestingUser.Id)
+            .FirstOrDefaultAsync();
+
+        if (user != null)
+        {
+            await userManager.DeleteAsync(user);
+        }
+
+        await emailService.SendEmailAfterAccountDelete(requestingUser.Email);
+        
+        return Ok();
+    }
 }

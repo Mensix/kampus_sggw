@@ -4,9 +4,10 @@ using System.Threading.Tasks;
 
 public interface IEmailService
 {
-    public Task SendEmailConfirmationForNewAccount(string email, string verificationCode);
-    public Task SendNewEmailConfirmationMessage(string email, string confirmationLink);
-    public Task SendPasswordResetCodeMessage(string email, string code);
-    public Task SendNewVerificationCodeMessage(string email, string verificationCode);
-    public Task SendWelcomeToAnnMessage(string email);
+    Task SendEmailConfirmationForNewAccount(string email, string verificationCode);
+    Task SendNewEmailConfirmationMessage(string email, string confirmationLink);
+    Task SendPasswordResetCodeMessage(string email, string code);
+    Task SendNewVerificationCodeMessage(string email, string verificationCode);
+    Task SendWelcomeToAnnMessage(string email);
+    Task SendEmailAfterAccountDelete(string email);
 }
