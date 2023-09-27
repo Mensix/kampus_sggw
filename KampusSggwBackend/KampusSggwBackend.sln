@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KampusSggwBackend.Domain", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "KampusSggwBackend.Infrastructure", "KampusSggwBackend.Infrastructure\KampusSggwBackend.Infrastructure.csproj", "{73D0AFB7-9AB6-4E89-A4B8-A54260FE76DB}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KampusSggwBackend.GenerateScheduleFile", "KampusSggwBackend.GenerateScheduleFile\KampusSggwBackend.GenerateScheduleFile.csproj", "{89586936-1D88-44EA-9DA8-8081997AE1C8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{73D0AFB7-9AB6-4E89-A4B8-A54260FE76DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{73D0AFB7-9AB6-4E89-A4B8-A54260FE76DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{73D0AFB7-9AB6-4E89-A4B8-A54260FE76DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{89586936-1D88-44EA-9DA8-8081997AE1C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{89586936-1D88-44EA-9DA8-8081997AE1C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{89586936-1D88-44EA-9DA8-8081997AE1C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{89586936-1D88-44EA-9DA8-8081997AE1C8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using KampusSggwBackend.Infrastructure.ScheduleService;
 
 public class Startup
 {
@@ -36,6 +37,8 @@ public class Startup
         services.AddUsersRepository();
         
         services.AddSendGridEmailService(Configuration);
+
+        services.AddScheduleService();
 
         //services.AddFirebase(Configuration);
 
