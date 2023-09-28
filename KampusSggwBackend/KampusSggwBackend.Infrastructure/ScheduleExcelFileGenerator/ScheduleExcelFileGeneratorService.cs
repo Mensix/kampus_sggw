@@ -51,13 +51,13 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
 
         for (int i = 0; i < days.Length; i++)
         {
-            var dayRow = worksheet.Cells[currentRow, 1, currentRow + model.Groups.Count - 1, 1];
+            var dayRow = worksheet.Cells[i + currentRow, 1, i + currentRow + model.Groups.Count - 1, 1];
             dayRow.Value = days[i];
             dayRow.Merge = true;
             dayRow.Style.TextRotation = 180;
 
             currentRow += model.Groups.Count;
-            var emptyRow = worksheet.Cells[currentRow, 1, currentRow, worksheet.Dimension.Columns];
+            var emptyRow = worksheet.Cells[i + currentRow, 1, i + currentRow, worksheet.Dimension.Columns];
             emptyRow.Value = ""; // what the hell?
             emptyRow.Merge = true;
             emptyRow.Style.Fill.PatternType = ExcelFillStyle.Solid;
@@ -102,7 +102,6 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
 
                 lessonRange.Value = $@"
                     {v.Name} ({v.Type})
-                    [s. {v.ClassroomId} b. {v.Classroom.Name}]
                 ".Trim();
                 lessonRange.Merge = true;
                 lessonRange.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
