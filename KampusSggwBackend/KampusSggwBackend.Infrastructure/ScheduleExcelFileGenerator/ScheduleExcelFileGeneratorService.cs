@@ -1,7 +1,6 @@
 ﻿namespace KampusSggwBackend.Infrastructure.ScheduleExcelFileGenerator;
 
 using System.Drawing;
-using System.Globalization;
 using KampusSggwBackend.Infrastructure.ScheduleExcelFileGenerator.Model;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
@@ -19,8 +18,8 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
         var worksheet = package.Workbook.Worksheets.Add(model.PlanName);
         worksheet.Cells.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
 
-        WritePlanName(worksheet, model.PlanName);
-        WriteGroupsCell(worksheet);
+        worksheet.Cells[1, 1].Value = model.PlanName;
+        worksheet.Cells[1, 2].Value = "Grupy";
         WriteHours(worksheet);
         WriteDays(worksheet, model);
         WriteGroups(worksheet, model);
@@ -30,21 +29,11 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
         return package.GetAsByteArray();
     }
 
-    private static void WritePlanName(ExcelWorksheet worksheet, string planName)
-    {
-        worksheet.Cells[1, 1].Value = planName;
-    }
-
-    private static void WriteGroupsCell(ExcelWorksheet worksheet)
-    {
-        worksheet.Cells[1, 2].Value = "Grupy";
-    }
-
     private static void WriteHours(ExcelWorksheet worksheet)
     {
         var currentTime = new TimeSpan(hours: 8, minutes: 0, seconds: 0);
         int currentColumn = 0;
-        while (currentTime < new TimeSpan(hours: 20, minutes: 0, seconds: 0))
+        while (currentTime <= new TimeSpan(hours: 20, minutes: 0, seconds: 0))
         {
             worksheet.Cells[1, currentColumn + 3].Value = currentTime.ToString("h\\:mm");
             worksheet.Cells[1, currentColumn + 3].Style.Font.Bold = true;
@@ -62,10 +51,17 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
 
         for (int i = 0; i < days.Length; i++)
         {
-            worksheet.Cells[i + currentRow, 1, i + currentRow + model.Groups.Count - 1, 1].Value = days[i];
-            worksheet.Cells[i + currentRow, 1, i + currentRow + model.Groups.Count - 1, 1].Merge = true;
-            worksheet.Cells[i + currentRow, 1, i + currentRow + model.Groups.Count - 1, 1].Style.TextRotation = 180;
+            var dayRow = worksheet.Cells[currentRow, 1, currentRow + model.Groups.Count - 1, 1];
+            dayRow.Value = days[i];
+            dayRow.Merge = true;
+            dayRow.Style.TextRotation = 180;
+
             currentRow += model.Groups.Count;
+            var emptyRow = worksheet.Cells[currentRow, 1, currentRow, worksheet.Dimension.Columns];
+            emptyRow.Value = ""; // what the hell?
+            emptyRow.Merge = true;
+            emptyRow.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            emptyRow.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(255, 204, 143));
         }
     }
 
@@ -88,30 +84,29 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
 
     private static void WriteLessons(ExcelWorksheet worksheet, ScheduleExcelFileModel model)
     {
-        for (var i = 0; i < model.Lessons.Count; i++)
+        var days = new string[] { "Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek" };
+        foreach (Lesson v in model.Lessons)
         {
-            var lessonDayColumn = worksheet.Cells[1, 1, worksheet.Dimension.Rows, 1]
-                .FirstOrDefault(cell => cell.Value.ToString() == model.Lessons[i].Day)
-                .Start.Row;
+            /* Start of the algorithm */
+            var dayIndex = Array.IndexOf(days, v.Day);
+            var lessonDayColumn = 2 + dayIndex * model.Groups.Count + (v.GroupsIds.Count - 1) * 2;
 
-            var lessonStartTimeRow = worksheet.Cells[1, 1, 1, worksheet.Dimension.Columns]
-          .FirstOrDefault(cell => cell.Value.ToString() == model.Lessons[i].StartTime.ToString("H:mm", CultureInfo.InvariantCulture))
-          .Start.Column;
+            var lessonStartTimeRow = (v.StartTime.Hour * 60 + v.StartTime.Minute - 480) / 15 + 3;
+            var lessonEndTimeRow = (v.EndTime.Hour * 60 + v.EndTime.Minute - 480) / 15 + 3;
 
-            var lessonEndTimeRow = worksheet.Cells[1, 1, 1, worksheet.Dimension.Columns]
-                .FirstOrDefault(cell => cell.Value.ToString() == model.Lessons[i].EndTime.ToString("H:mm", CultureInfo.InvariantCulture))
-                .Start.Column;
-
-            for (var j = 0; j < model.Groups.Count; j++)
+            foreach (var group in model.Groups.Where(g => v.GroupsIds.Contains(g.Id)))
             {
-                var lessonGroupRow = worksheet.Cells[lessonDayColumn + j, 1, lessonDayColumn + j, worksheet.Dimension.Columns]
-                    .FirstOrDefault(cell => cell.Value.ToString() == model.Groups[j].Name)
-                    .Start.Row;
+                var lessonGroupRow = lessonDayColumn + model.Groups.IndexOf(group);
+                var lessonRange = worksheet.Cells[lessonGroupRow, lessonStartTimeRow, lessonGroupRow, lessonEndTimeRow];
+                /* End of the algorithm */
 
-                worksheet.Cells[lessonGroupRow, lessonStartTimeRow, lessonGroupRow, lessonEndTimeRow].Value = model.Lessons[i].Name;
-                worksheet.Cells[lessonGroupRow, lessonStartTimeRow, lessonGroupRow, lessonEndTimeRow].Merge = true;
-                worksheet.Cells[lessonGroupRow, lessonStartTimeRow, lessonGroupRow, lessonEndTimeRow].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-                worksheet.Cells[lessonGroupRow, lessonStartTimeRow, lessonGroupRow, lessonEndTimeRow].Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+                lessonRange.Value = $@"
+                    {v.Name} ({v.Type})
+                    [s. {v.ClassroomId} b. {v.Classroom.Name}]
+                ".Trim();
+                lessonRange.Merge = true;
+                lessonRange.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                lessonRange.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
             }
         }
     }
