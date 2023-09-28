@@ -22,8 +22,10 @@ public class Program
             Lecturers = new List<Lecturer>() { lecturer1, lecturer2 },
             Lessons = new List<Lesson>()
             {
-                new Lesson() { Id = new Guid("ce503532-0c9a-4e54-8e4b-7086d04c5c5e"), Name = "Kaczologia", ClassroomId = class1.Id, GroupsIds = new List<Guid>() { group1.Id, group2.Id }, LecturersIds = new List<Guid>() { lecturer1.Id } },
-                new Lesson() { Id = new Guid("ce503532-0c9a-4e54-8e4b-7086d04c5c5e"), Name = "Tuskologia", ClassroomId = class1.Id, GroupsIds = new List<Guid>() { group1.Id }, LecturersIds = new List<Guid>() { lecturer2.Id } }
+                new Lesson() { Id = new Guid("ce503532-0c9a-4e54-8e4b-7086d04c5c5e"), Name = "Kaczologia", ClassroomId = class1.Id, GroupsIds = new List<Guid>() { group1.Id, group2.Id }, LecturersIds = new List<Guid>() { lecturer1.Id }, Day = "Poniedziałek", StartTime = new TimeOnly(8, 30), EndTime = new TimeOnly(9, 15) },
+                new Lesson() { Id = new Guid("ce503532-0c9a-4e54-8e4b-7086d04c5c5e"), Name = "Kaczologia", ClassroomId = class1.Id, GroupsIds = new List<Guid>() { group1.Id, group2.Id }, LecturersIds = new List<Guid>() { lecturer1.Id }, Day = "Piątek", StartTime = new TimeOnly(19, 30), EndTime = new TimeOnly(19, 45) },
+                new Lesson() { Id = new Guid("ce503532-0c9a-4e54-8e4b-7086d04c5c5e"), Name = "Kaczologia", ClassroomId = class1.Id, GroupsIds = new List<Guid>() { group1.Id }, LecturersIds = new List<Guid>() { lecturer1.Id }, Day = "Piątek", StartTime = new TimeOnly(11, 00), EndTime = new TimeOnly(13, 00) },
+                new Lesson() { Id = new Guid("ce503532-0c9a-4e54-8e4b-7086d04c5c5e"), Name = "Kaczologia", ClassroomId = class1.Id, GroupsIds = new List<Guid>() { group2.Id }, LecturersIds = new List<Guid>() { lecturer1.Id }, Day = "Środa", StartTime = new TimeOnly(10, 0), EndTime = new TimeOnly(11, 30) }
             }
         };
 
@@ -32,7 +34,5 @@ public class Program
         var bytes = service.GenerateExcelFile(model);
 
         File.WriteAllBytes("Result.xlsx", bytes);
-
-        Console.WriteLine("Hello, World!");
     }
 }
