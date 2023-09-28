@@ -89,14 +89,14 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
         {
             /* Start of the algorithm */
             var dayIndex = Array.IndexOf(days, v.Day);
-            var lessonDayColumn = 2 + dayIndex * model.Groups.Count + (v.GroupsIds.Count - 1) * 2;
-
+            var lessonDayColumn = dayIndex * (model.Groups.Count + 1) + 2;
+            
             var lessonStartTimeRow = (v.StartTime.Hour * 60 + v.StartTime.Minute - 480) / 15 + 3;
             var lessonEndTimeRow = (v.EndTime.Hour * 60 + v.EndTime.Minute - 480) / 15 + 3;
 
             foreach (var group in model.Groups.Where(g => v.GroupsIds.Contains(g.Id)))
             {
-                var lessonGroupRow = lessonDayColumn + model.Groups.IndexOf(group);
+                var lessonGroupRow = lessonDayColumn + group.Index;
                 var lessonRange = worksheet.Cells[lessonGroupRow, lessonStartTimeRow, lessonGroupRow, lessonEndTimeRow];
                 /* End of the algorithm */
 

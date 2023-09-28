@@ -7,8 +7,8 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        var group1 = new Group() { Id = new Guid("8b0c5d41-858d-4d63-9a17-5e166c785baa"), Name = "G1", Index = 1 };
-        var group2 = new Group() { Id = new Guid("a9f1e0e2-7f77-4d98-b2ce-492ba48bf8e5"), Name = "G2", Index = 2 };
+        var group1 = new Group() { Id = new Guid("8b0c5d41-858d-4d63-9a17-5e166c785baa"), Name = "G1", Index = 0 };
+        var group2 = new Group() { Id = new Guid("a9f1e0e2-7f77-4d98-b2ce-492ba48bf8e5"), Name = "G2", Index = 1 };
 
         var lecturer1 = new Lecturer() { Id = new Guid("7cd6f69d-60a6-4c6c-b7f2-9cfbe65c7746"), FirstName = "Jarosław", LastName = "Kaczyński" };
         var lecturer2 = new Lecturer() { Id = new Guid("db4f5ea2-8ea6-44a9-996f-265f9d6a3ff3"), FirstName = "Donald", LastName = "Tusk" };
@@ -22,7 +22,8 @@ public class Program
             Lecturers = new List<Lecturer>() { lecturer1, lecturer2 },
             Lessons = new List<Lesson>()
             {
-                new Lesson() { Id = new Guid("ce503532-0c9a-4e54-8e4b-7086d04c5c5e"), Name = "Kaczologia", ClassroomId = class1.Id, GroupsIds = new List<Guid>() { group2.Id }, LecturersIds = new List<Guid>() { lecturer1.Id }, Day = "Poniedziałek", StartTime = new TimeOnly(8, 30), EndTime = new TimeOnly(9, 15), Type = LessonType.Laboratory }
+                new Lesson() { Id = new Guid(g: "ce503532-0c9a-4e54-8e4b-7086d04c5c5e"), Name = "Kaczologia", ClassroomId = class1.Id, GroupsIds = new List<Guid>() { group1.Id, group2.Id }, LecturersIds = new List<Guid>() { lecturer1.Id }, Day = "Poniedziałek", StartTime = new TimeOnly(8, 30), EndTime = new TimeOnly(9, 15), Type = LessonType.Laboratory }
+
             }
         };
 
