@@ -2,7 +2,6 @@
 
 using System.Data;
 using System.Drawing;
-using System.Drawing.Text;
 using KampusSggwBackend.Infrastructure.ScheduleExcelFileGenerator.Model;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
@@ -33,8 +32,6 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
 
         WriteDays(worksheet, model);
 
-        // WriteLessons(worksheet, model);
-
         var column = worksheet.Columns[3];
         worksheet.Calculate();
 
@@ -43,14 +40,16 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
 
     private void WriteDays(ExcelWorksheet worksheet, ScheduleExcelFileModel model)
     {
-        string[] days = { "Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek" };
+        var daysCount = 5; // From Monday to Friday
         var currentRow = 2;
         var marginEmtpyRows = 1;
 
-        for (int i = 0; i < days.Length; i++)
+        for (int i = 0; i < daysCount; i++)
         {
+            var dayOfWeek = (DayOfWeek)(i + 1);
+
             var dayRow = worksheet.Cells[currentRow, 1, currentRow + model.Groups.Count - 1 + 1, 1];
-            dayRow.Value = days[i];
+            dayRow.Value = DayOfWeekToString(dayOfWeek);
             dayRow.Merge = true;
             dayRow.Style.TextRotation = 180;
             dayRow.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
@@ -62,7 +61,7 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
             dayRow.EntireRow.Height = 60;
 
             WriteHours(worksheet, currentRow);
-            WriteGroups(worksheet, model, currentRow, days[i]);
+            WriteGroups(worksheet, model, currentRow, dayOfWeek);
 
             currentRow += model.Groups.Count + 1;
 
@@ -115,7 +114,7 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
         }
     }
 
-    private void WriteGroups(ExcelWorksheet worksheet, ScheduleExcelFileModel model, int startRow, string day)
+    private void WriteGroups(ExcelWorksheet worksheet, ScheduleExcelFileModel model, int startRow, DayOfWeek day)
     {
         var groupsCell = worksheet.Cells[startRow, 2];
         groupsCell.Value = model.PlanName;
@@ -158,7 +157,7 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
         emptyRow.Style.Border.Top.Style = ExcelBorderStyle.Medium;
     }
 
-    private void WriteGroupLessons(ExcelWorksheet worksheet, ScheduleExcelFileModel model, Guid currentGroupId, string day, int rowIndex)
+    private void WriteGroupLessons(ExcelWorksheet worksheet, ScheduleExcelFileModel model, Guid currentGroupId, DayOfWeek day, int rowIndex)
     {
         var startTime = new TimeSpan(hours: 8, minutes: 0, seconds: 0);
         var endTime = new TimeSpan(hours: 20, minutes: 0, seconds: 0);
@@ -200,9 +199,10 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
         foreach (Lesson lesson in lessons)
         {
             var lessonClassroom = model.Classrooms.First(c => c.Id == lesson.ClassroomId);
+            var lessonLecturers = model.Lecturers.Where(l => lesson.LecturersIds.Contains(l.Id)).ToList();
 
             var lessonStartTimeColumn = (lesson.StartTime.Hour * 60 + lesson.StartTime.Minute - 480) / 15 + 3;
-            var lessonEndTimeColumn = (lesson.EndTime.Hour * 60 + lesson.EndTime.Minute - 480) / 15 + 3;
+            var lessonEndTimeColumn = (lesson.EndTime.Hour * 60 + lesson.EndTime.Minute - 480) / 15 + 3 - 1;
 
             var lessonCells = worksheet.Cells[rowIndex, lessonStartTimeColumn, rowIndex, lessonEndTimeColumn];
             lessonCells.Merge = true;
@@ -212,12 +212,49 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
             lessonCells.Style.Border.Left.Style = ExcelBorderStyle.Medium;
             lessonCells.Style.Border.Right.Style = ExcelBorderStyle.Medium;
             lessonCells.Style.Border.Top.Style = ExcelBorderStyle.Medium;
+
+            if (lesson.Type == LessonType.Laboratory)
+            {
+                lessonCells.Style.Fill.SetBackground(Color.Silver);
+            }
+
             lessonCells.Style.WrapText = true;
             lessonCells.IsRichText = true;
-            var lessonNameText = lessonCells.RichText.Add($"{lesson.Name} ({lesson.Type})" + GetNewLineCharacter());
+            var lessonNameText = lessonCells.RichText.Add($"{lesson.Name} ({LessonTypeToString(lesson.Type)})" + GetNewLineCharacter());
             lessonNameText.Bold = true;
+            string lecturersRaw = string.Join(", ", lessonLecturers.Select(ll => $"{ll.AcademicDegree} {ll.FirstName} {ll.LastName}"));
+            var lecturerText = lessonCells.RichText.Add(lecturersRaw + GetNewLineCharacter());
             var classroomText = lessonCells.RichText.Add($"[s. {lessonClassroom.Name} b. {lessonClassroom.BuildingName}]");
             classroomText.Bold = false;
+        }
+    }
+
+    private string LessonTypeToString(LessonType type)
+    {
+        switch (type)
+        {
+            case LessonType.Laboratory: return "lab";
+            case LessonType.Lecture: return "w";
+            case LessonType.Exercise: return "ćw";
+            case LessonType.Project: return "proj";
+            case LessonType.Seminar: return "s";
+            case LessonType.Other: return "o";
+            default: throw new ArgumentException("Incorrect LessonType: " + type);
+        }
+    }
+
+    private string DayOfWeekToString(DayOfWeek day)
+    {
+        switch (day)
+        {
+            case DayOfWeek.Monday: return "Poniedziałek";
+            case DayOfWeek.Tuesday: return "Wtorek";
+            case DayOfWeek.Wednesday: return "Środa";
+            case DayOfWeek.Thursday: return "Czwartek";
+            case DayOfWeek.Friday: return "Piątek";
+            case DayOfWeek.Saturday: return "Sobota";
+            case DayOfWeek.Sunday: return "Niedziela";
+            default: throw new ArgumentException("Incorrect DayOfWeek: " + day);
         }
     }
 

@@ -17,7 +17,7 @@ public class Lesson
     public string Name { get; set; }
     public LessonType Type { get; set; }
     public List<Guid> LecturersIds { get; set; }
-    public string Day { get; set; }
+    public DayOfWeek Day { get; set; }
     public TimeOnly StartTime { get; set; }
     public TimeOnly EndTime { get; set; }
     public List<Guid> GroupsIds { get; set; }
