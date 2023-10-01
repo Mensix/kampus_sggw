@@ -6,4 +6,5 @@ public class ScheduleExcelFileModel
     public List<Group> Groups { get; set; }
     public List<Lecturer> Lecturers { get; set; }
     public List<Lesson> Lessons { get; set; }
+    public List<Classroom> Classrooms { get; set; }
 }

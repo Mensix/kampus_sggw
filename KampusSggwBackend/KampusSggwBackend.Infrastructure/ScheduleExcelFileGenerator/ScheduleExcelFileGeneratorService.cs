@@ -1,6 +1,8 @@
 ﻿namespace KampusSggwBackend.Infrastructure.ScheduleExcelFileGenerator;
 
+using System.Data;
 using System.Drawing;
+using System.Drawing.Text;
 using KampusSggwBackend.Infrastructure.ScheduleExcelFileGenerator.Model;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
@@ -17,97 +19,210 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
         using var package = new ExcelPackage();
         var worksheet = package.Workbook.Worksheets.Add(model.PlanName);
         worksheet.Cells.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+        worksheet.Cells.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
 
-        worksheet.Cells[1, 1].Value = model.PlanName;
-        worksheet.Cells[1, 2].Value = "Grupy";
-        WriteHours(worksheet);
+        var scheduleNameCell = worksheet.Cells[1, 1];
+        scheduleNameCell.Value = model.PlanName;
+        scheduleNameCell.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+        scheduleNameCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+        scheduleNameCell.Style.Border.Bottom.Style = ExcelBorderStyle.Medium;
+        scheduleNameCell.Style.Border.Left.Style = ExcelBorderStyle.Medium;
+        scheduleNameCell.Style.Border.Right.Style = ExcelBorderStyle.Medium;
+        scheduleNameCell.Style.Border.Top.Style = ExcelBorderStyle.Medium;
+        scheduleNameCell.Value = model.PlanName;
+
         WriteDays(worksheet, model);
-        WriteGroups(worksheet, model);
-        WriteLessons(worksheet, model);
+
+        // WriteLessons(worksheet, model);
+
+        var column = worksheet.Columns[3];
         worksheet.Calculate();
 
         return package.GetAsByteArray();
     }
 
-    private static void WriteHours(ExcelWorksheet worksheet)
+    private void WriteDays(ExcelWorksheet worksheet, ScheduleExcelFileModel model)
     {
-        var currentTime = new TimeSpan(hours: 8, minutes: 0, seconds: 0);
-        int currentColumn = 0;
-        while (currentTime <= new TimeSpan(hours: 20, minutes: 0, seconds: 0))
+        string[] days = { "Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek" };
+        var currentRow = 2;
+        var marginEmtpyRows = 1;
+
+        for (int i = 0; i < days.Length; i++)
         {
-            worksheet.Cells[1, currentColumn + 3].Value = currentTime.ToString("h\\:mm");
-            worksheet.Cells[1, currentColumn + 3].Style.Font.Bold = true;
+            var dayRow = worksheet.Cells[currentRow, 1, currentRow + model.Groups.Count - 1 + 1, 1];
+            dayRow.Value = days[i];
+            dayRow.Merge = true;
+            dayRow.Style.TextRotation = 180;
+            dayRow.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+            dayRow.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            dayRow.Style.Border.Bottom.Style = ExcelBorderStyle.Medium;
+            dayRow.Style.Border.Left.Style = ExcelBorderStyle.Medium;
+            dayRow.Style.Border.Right.Style = ExcelBorderStyle.Medium;
+            dayRow.Style.Border.Top.Style = ExcelBorderStyle.Medium;
+            dayRow.EntireRow.Height = 60;
+
+            WriteHours(worksheet, currentRow);
+            WriteGroups(worksheet, model, currentRow, days[i]);
+
+            currentRow += model.Groups.Count + 1;
+
+            WriteEmptyRow(worksheet, currentRow);
+
+            currentRow += marginEmtpyRows;
+        }
+    }
+
+    private void WriteHours(ExcelWorksheet worksheet, int startRow)
+    {
+        worksheet.Rows[startRow].Height = 16;
+
+        var startTime = new TimeSpan(hours: 8, minutes: 0, seconds: 0);
+        var endTime = new TimeSpan(hours: 20, minutes: 0, seconds: 0);
+        var currentTime = startTime;
+        int currentColumn = 0;
+
+        while (currentTime <= endTime)
+        {
+            var hourCell = worksheet.Cells[startRow, currentColumn + 3];
+
+            hourCell.Value = currentTime.ToString("h\\:mm");
+            hourCell.Style.Font.Bold = true;
+            hourCell.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+            hourCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            hourCell.Style.Border.Bottom.Style = ExcelBorderStyle.Medium;
+            hourCell.Style.Border.Top.Style = ExcelBorderStyle.Medium;
+            worksheet.Columns[currentColumn + 3].Width = 6;
+
+            if (currentColumn == 0) // is first cell in hours line
+            {
+                hourCell.Style.Border.Left.Style = ExcelBorderStyle.Medium;
+                hourCell.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+            }
+            else if (currentTime.Add(TimeSpan.FromMinutes(15)) > endTime) // is last cell in hours line
+            {
+
+                hourCell.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                hourCell.Style.Border.Right.Style = ExcelBorderStyle.Medium;
+            }
+            else // any other cell
+            {
+                hourCell.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                hourCell.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+            }
+
+            currentColumn++;
+            currentTime = currentTime.Add(TimeSpan.FromMinutes(15));
+        }
+    }
+
+    private void WriteGroups(ExcelWorksheet worksheet, ScheduleExcelFileModel model, int startRow, string day)
+    {
+        var groupsCell = worksheet.Cells[startRow, 2];
+        groupsCell.Value = model.PlanName;
+        groupsCell.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+        groupsCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+        groupsCell.Style.Border.Bottom.Style = ExcelBorderStyle.Medium;
+        groupsCell.Style.Border.Left.Style = ExcelBorderStyle.Medium;
+        groupsCell.Style.Border.Right.Style = ExcelBorderStyle.Medium;
+        groupsCell.Style.Border.Top.Style = ExcelBorderStyle.Medium;
+        groupsCell.Value = "Grupy";
+
+        for (int groupIndex = 0; groupIndex < model.Groups.Count; groupIndex++)
+        {
+            var group = model.Groups[groupIndex];
+
+            var groupNameCell = worksheet.Cells[startRow + groupIndex + 1, 2];
+            groupNameCell.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+            groupNameCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            groupNameCell.Style.Border.Bottom.Style = ExcelBorderStyle.Medium;
+            groupNameCell.Style.Border.Left.Style = ExcelBorderStyle.Medium;
+            groupNameCell.Style.Border.Right.Style = ExcelBorderStyle.Medium;
+            groupNameCell.Style.Border.Top.Style = ExcelBorderStyle.Medium;
+            groupNameCell.Value = group.Name;
+
+            WriteGroupLessons(worksheet, model, group.Id, day, startRow + groupIndex + 1);
+        }
+    }
+
+    private void WriteEmptyRow(ExcelWorksheet worksheet, int rowIdenx)
+    {
+        var emptyRow = worksheet.Cells[rowIdenx, 1, rowIdenx, worksheet.Dimension.Columns];
+        emptyRow.Value = "";
+        emptyRow.Merge = true;
+        emptyRow.Style.Fill.PatternType = ExcelFillStyle.Solid;
+        emptyRow.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(255, 204, 143));
+        emptyRow.EntireRow.Height = 4;
+        emptyRow.Style.Border.Bottom.Style = ExcelBorderStyle.Medium;
+        emptyRow.Style.Border.Left.Style = ExcelBorderStyle.Medium;
+        emptyRow.Style.Border.Right.Style = ExcelBorderStyle.Medium;
+        emptyRow.Style.Border.Top.Style = ExcelBorderStyle.Medium;
+    }
+
+    private void WriteGroupLessons(ExcelWorksheet worksheet, ScheduleExcelFileModel model, Guid currentGroupId, string day, int rowIndex)
+    {
+        var startTime = new TimeSpan(hours: 8, minutes: 0, seconds: 0);
+        var endTime = new TimeSpan(hours: 20, minutes: 0, seconds: 0);
+        var currentTime = startTime;
+        int currentColumn = 0;
+
+        while (currentTime <= endTime)
+        {
+            var contentCell = worksheet.Cells[rowIndex, currentColumn + 3];
+
+            contentCell.Style.Font.Bold = true;
+            contentCell.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+            contentCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            contentCell.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+            contentCell.Style.Border.Top.Style = ExcelBorderStyle.Thin;
+
+            if (currentColumn == 0) // is first cell in hours line
+            {
+                contentCell.Style.Border.Left.Style = ExcelBorderStyle.Medium;
+                contentCell.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+            }
+            else if (currentTime.Add(TimeSpan.FromMinutes(15)) > endTime) // is last cell in hours line
+            {
+                contentCell.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                contentCell.Style.Border.Right.Style = ExcelBorderStyle.Medium;
+            }
+            else // any other cell
+            {
+                contentCell.Style.Border.Left.Style = ExcelBorderStyle.Thin;
+                contentCell.Style.Border.Right.Style = ExcelBorderStyle.Thin;
+            }
 
             currentColumn++;
             currentTime = currentTime.Add(TimeSpan.FromMinutes(15));
         }
 
-    }
+        var lessons = model.Lessons.Where(l => l.Day == day && l.GroupsIds.Contains(currentGroupId)).ToList();
 
-    private static void WriteDays(ExcelWorksheet worksheet, ScheduleExcelFileModel model)
-    {
-        string[] days = { "Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek" };
-        var currentRow = 2;
-
-        for (int i = 0; i < days.Length; i++)
+        foreach (Lesson lesson in lessons)
         {
-            var dayRow = worksheet.Cells[currentRow, 1, currentRow + model.Groups.Count - 1, 1];
-            dayRow.Value = days[i];
-            dayRow.Merge = true;
-            dayRow.Style.TextRotation = 180;
+            var lessonClassroom = model.Classrooms.First(c => c.Id == lesson.ClassroomId);
 
-            currentRow += model.Groups.Count;
-            var emptyRow = worksheet.Cells[currentRow, 1, currentRow, worksheet.Dimension.Columns];
-            emptyRow.Value = ""; // what the hell?
-            emptyRow.Merge = true;
-            emptyRow.Style.Fill.PatternType = ExcelFillStyle.Solid;
-            emptyRow.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(255, 204, 143));
+            var lessonStartTimeColumn = (lesson.StartTime.Hour * 60 + lesson.StartTime.Minute - 480) / 15 + 3;
+            var lessonEndTimeColumn = (lesson.EndTime.Hour * 60 + lesson.EndTime.Minute - 480) / 15 + 3;
+
+            var lessonCells = worksheet.Cells[rowIndex, lessonStartTimeColumn, rowIndex, lessonEndTimeColumn];
+            lessonCells.Merge = true;
+            lessonCells.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+            lessonCells.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            lessonCells.Style.Border.Bottom.Style = ExcelBorderStyle.Medium;
+            lessonCells.Style.Border.Left.Style = ExcelBorderStyle.Medium;
+            lessonCells.Style.Border.Right.Style = ExcelBorderStyle.Medium;
+            lessonCells.Style.Border.Top.Style = ExcelBorderStyle.Medium;
+            lessonCells.Style.WrapText = true;
+            lessonCells.IsRichText = true;
+            var lessonNameText = lessonCells.RichText.Add($"{lesson.Name} ({lesson.Type})" + GetNewLineCharacter());
+            lessonNameText.Bold = true;
+            var classroomText = lessonCells.RichText.Add($"[s. {lessonClassroom.Name} b. {lessonClassroom.BuildingName}]");
+            classroomText.Bold = false;
         }
     }
 
-    private static void WriteGroups(ExcelWorksheet worksheet, ScheduleExcelFileModel model)
+    private string GetNewLineCharacter()
     {
-        string[] days = { "Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek" };
-        var currentRow = 2;
-
-        for (int i = 0; i < days.Length; i++)
-        {
-            foreach (var group in model.Groups)
-            {
-                worksheet.Cells[currentRow, 2].Value = group.Name;
-                currentRow++;
-            }
-
-            currentRow++;
-        }
-    }
-
-    private static void WriteLessons(ExcelWorksheet worksheet, ScheduleExcelFileModel model)
-    {
-        var days = new string[] { "Poniedziałek", "Wtorek", "Środa", "Czwartek", "Piątek" };
-        foreach (Lesson v in model.Lessons)
-        {
-            /* Start of the algorithm */
-            var dayIndex = Array.IndexOf(days, v.Day);
-            var lessonDayColumn = 2 + dayIndex * model.Groups.Count + (v.GroupsIds.Count - 1) * 2;
-
-            var lessonStartTimeRow = (v.StartTime.Hour * 60 + v.StartTime.Minute - 480) / 15 + 3;
-            var lessonEndTimeRow = (v.EndTime.Hour * 60 + v.EndTime.Minute - 480) / 15 + 3;
-
-            foreach (var group in model.Groups.Where(g => v.GroupsIds.Contains(g.Id)))
-            {
-                var lessonGroupRow = lessonDayColumn + model.Groups.IndexOf(group);
-                var lessonRange = worksheet.Cells[lessonGroupRow, lessonStartTimeRow, lessonGroupRow, lessonEndTimeRow];
-                /* End of the algorithm */
-
-                lessonRange.Value = $@"
-                    {v.Name} ({v.Type})
-                    [s. {v.ClassroomId} b. {v.Classroom.Name}]
-                ".Trim();
-                lessonRange.Merge = true;
-                lessonRange.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-                lessonRange.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
-            }
-        }
+        return ((char)10).ToString();
     }
 }
