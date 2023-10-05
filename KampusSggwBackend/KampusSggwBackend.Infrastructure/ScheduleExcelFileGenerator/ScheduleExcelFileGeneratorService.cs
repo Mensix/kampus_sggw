@@ -201,10 +201,10 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
 
             lessonCells.Style.WrapText = true;
             lessonCells.IsRichText = true;
-            var lessonNameText = lessonCells.RichText.Add($"{lesson.Name} ({LessonTypeToString(lesson.Type)})" + Environment.NewLine);
+            var lessonNameText = lessonCells.RichText.Add($"{lesson.Name} ({LessonTypeToString(lesson.Type)})" + GetNewLineCharacter());
             lessonNameText.Bold = true;
             string lecturersRaw = string.Join(", ", lessonLecturers.Select(ll => $"{ll.AcademicDegree} {ll.FirstName} {ll.LastName}"));
-            var lecturerText = lessonCells.RichText.Add(lecturersRaw + Environment.NewLine);
+            var lecturerText = lessonCells.RichText.Add(lecturersRaw + GetNewLineCharacter());
             var classroomText = lessonCells.RichText.Add($"[s. {lessonClassroom.Name} b. {lessonClassroom.BuildingName}]");
             classroomText.Bold = false;
         }
@@ -237,5 +237,10 @@ public class ScheduleExcelFileGeneratorService : IScheduleExcelFileGeneratorServ
             DayOfWeek.Sunday => "Niedziela",
             _ => throw new ArgumentException("Incorrect DayOfWeek: " + day),
         };
+    }
+
+    private string GetNewLineCharacter()
+    {
+        return ((char)10).ToString();
     }
 }
